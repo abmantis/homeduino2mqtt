@@ -112,6 +112,7 @@ class SerialProtocol(asyncio.Protocol):
         self.rf_send_request_event = asyncio.Event()
         self.rf_send_ack_event = asyncio.Event()
         self.receiving_finished_event = asyncio.Event()
+        self.init_done = False
 
     def connection_made(self, transport):
         self.transport = transport
@@ -132,14 +133,19 @@ class SerialProtocol(asyncio.Protocol):
         data_str = data.decode("utf-8")
         
         msg = data_str.rstrip()
+
+        if msg == "ready":
+            self.write_data("RF receive {pin}".format(pin=self.rx_pin))
+            if not self.init_done:
+                asyncio.ensure_future(self.rf_send_queue_loop())
+                self.mqtt.on_data_cb = self.on_mqtt_data
+                self.init_done = True
+            else:
+                logger.error("Serial: received 'redy' more than once. Connection droped?")
+
         if self.receiving:            
             self.rx_buffer = self.rx_buffer + msg
-        
-        elif msg == "ready":
-            self.write_data("RF receive {pin}".format(pin=self.rx_pin))
-            asyncio.ensure_future(self.rf_send_queue_loop())
-            self.mqtt.on_data_cb = self.on_mqtt_data
-
+       
         elif msg == "ACK":
             if len(self.rf_send_waiting_ack) > 0:
                 logger.debug("Serial: received ACK for %s", self.rf_send_waiting_ack)
