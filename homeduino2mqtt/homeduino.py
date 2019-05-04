@@ -96,6 +96,7 @@ class MqttClient():
     def send_rf_rx(self, data):
         #logger.debug("MQTT: send_rf_rx %s", data)
         self.client.publish(self.rf_rx_topic, data)
+        self.client.publish(self.rf_rx_topic + "/data", data.rpartition(' ')[2])
 
     def send_rf_tx_state(self, data):
         self.client.publish(self.rf_tx_state_topic, data)
