@@ -150,6 +150,7 @@ class SerialProtocol(asyncio.Protocol):
             if len(self.rf_send_waiting_ack) > 0:
                 logger.debug("Serial: received ACK for %s", self.rf_send_waiting_ack)
                 self.mqtt.send_rf_tx_state(self.rf_send_waiting_ack)
+                self.rf_send_waiting_ack = ""
                 self.rf_send_ack_event.set()
 
         elif msg.startswith("ERR"):
